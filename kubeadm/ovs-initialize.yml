@@ -1,17 +1,4 @@
 ---
-- hosts: all
-  become: yes
-  tasks:
-    - name: Add the ovs bridge to connect two hosts
-      command: ovs-vsctl add-br br1
-    
-    - name: Flush the ip of the interface ens37
-      command: ip address flush ens37
-
-    - name: Add port ens37 to ovs bridge br1
-      command: ovs-vsctl add-port br1 ens37
-
-
 - hosts: worker
   become: yes
   tasks:
