@@ -1,0 +1,87 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Add the ovs bridge to connect two hosts
+      command: ovs-vsctl add-br br1
+    
+    - name: Flush the ip of the interface ens37
+      command: ip address flush ens37
+
+    - name: Add port ens37 to ovs bridge br1
+      command: ovs-vsctl add-port br1 ens37
+
+
+- hosts: worker
+  become: yes
+  tasks:
+    - name: Get the interface name of the network adapter
+      shell: ip -o link | awk '$1 {print $2}' | sed -n 3p | cut -d ":" -f1
+      register: join_command_interface_raw_1
+
+    - name: Set Interface Name
+      set_fact:
+        int_command: "{{ join_command_interface_raw_1.stdout_lines[0] }}"
+
+    - name: Add the ovs bridge to connect two hosts
+      command: ovs-vsctl add-br br1
+
+    - name: Add port ens37 to ovs bridge br1
+      command: ovs-vsctl add-port br1 {{ hostvars['worker1'].join_command }}
+
+    - name: Add IP address to worker node in bridge1
+      command: ip address add 192.168.1.152 dev br1
+
+- hosts: master
+  become: yes
+  tasks:
+    - name: Get the interface name of the network adapter
+      shell: ip -o link | awk '$1 {print $2}' | sed -n 3p | cut -d ":" -f1
+      register: join_command_interface_raw_1
+
+    - name: Set Interface Name
+      set_fact:
+        int_command: "{{ join_command_interface_raw_1.stdout_lines[0] }}"
+
+    - name: Add the ovs bridge to connect two hosts
+      command: ovs-vsctl add-br br1
+
+    - name: Add port ens37 to ovs bridge br1
+      command: ovs-vsctl add-port br1 {{ hostvars['worker1'].join_command }}
+
+
+    - name: Add IP address to the master node in bridge1
+      command: ip address add 192.168.1.150 dev br1
+
+    - name: Create namespace cluster-network-addons
+      command: kubectl apply -f /root/k8s/namespace.yaml
+
+    - name: Feed multus daemonset to the kubernetes
+      command: kubectl apply -f /root/k8s/multus-daemonset.yml
+
+    - name: wait for 5 minutes for daemonset to be ready  
+      wait_for: 
+        timeout: 300
+      delegate_to: localhost
+    
+    - name: Feed multus interface to kubernetes
+      command: kubectl apply -f /root/k8s/interface.yaml
+
+    - name: Feed network-addons-config.crd.yaml to kubernetes
+      command: kubectl apply -f /root/k8s/network-addons-config.crd.yaml
+
+    - name: Feed ovs addons plugins to kubernetes
+      command: kubectl apply -f /root/k8s/role.yaml
+
+    - name: Feed plugins to the kubernetes
+      command: kubectl apply -f /root/k8s/ovs.yaml
+
+    - name: Feed network-addons-config.crd.yaml to kubernetes
+      command: kubectl apply -f /root/k8s/network-addons-config.crd.yaml
+
+    - name: Feed network-addons-config.crd.yaml to kubernetes
+      command: kubectl apply -f /root/k8s/operator.yaml 
+
+    - name: Wait for 5 minutes
+      wait_for:
+        timeout: 300

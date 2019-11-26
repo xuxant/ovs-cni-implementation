@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: server-pod
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ovs-net-1,ovs-net-2-vlan
+  labels:
+    component: web
+spec:
+  containers:
+    - name: server
+      image: xuxant/tomcat
+      securityContext:
+        privileged: true
+      ports:
+        - containerPort: 8080

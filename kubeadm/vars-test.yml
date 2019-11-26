@@ -1,0 +1,15 @@
+---
+- hosts: worker1
+  become: yes
+  gather_facts: false
+  tasks:
+    - name: Get the interface name of the network adapter
+      shell: ip -o link | awk '$1 {print $2}' | sed -n 3p | cut -d ":" -f1
+      register: join_command_raw_1
+
+    - name: Set Interface Name
+      set_fact:
+        join_command: "{{ join_command_raw_1.stdout_lines[0] }}"
+
+    - debug:
+        msg: Interface name is {{ hostvars['worker1'].join_command }}
