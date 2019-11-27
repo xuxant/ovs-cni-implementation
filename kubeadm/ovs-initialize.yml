@@ -1,4 +1,11 @@
 ---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Delete bridge if exists
+      command: ovs-vsctl del-br br1
+      ignore_errors: yes
+
 - hosts: worker
   become: yes
   tasks:
@@ -12,9 +19,11 @@
 
     - name: Add the ovs bridge to connect two hosts
       command: ovs-vsctl add-br br1
+      ignore_errors: yes
 
     - name: Add port ens37 to ovs bridge br1
-      command: ovs-vsctl add-port br1 {{ hostvars['worker1'].join_command }}
+      command: ovs-vsctl add-port br1 {{ hostvars['worker1'].int_command }}
+      ignore_errors: yes
 
     - name: Add IP address to worker node in bridge1
       command: ip address add 192.168.1.152 dev br1
@@ -28,13 +37,15 @@
 
     - name: Set Interface Name
       set_fact:
-        int_command: "{{ join_command_interface_raw_1.stdout_lines[0] }}"
+        join_command: "{{ join_command_interface_raw_1.stdout_lines[0] }}"
 
     - name: Add the ovs bridge to connect two hosts
       command: ovs-vsctl add-br br1
+      ignore_errors: yes
 
     - name: Add port ens37 to ovs bridge br1
-      command: ovs-vsctl add-port br1 {{ hostvars['worker1'].join_command }}
+      command: ovs-vsctl add-port br1 {{ hostvars['master'].join_command }}
+      ignore_errors: yes
 
 
     - name: Add IP address to the master node in bridge1
