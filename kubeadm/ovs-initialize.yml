@@ -73,7 +73,7 @@
 
     - name: Wait for 5 minutes
       wait_for:
-        timeout: 300
+        timeout: 600
 
     - name: Feed multus daemonset to the kubernetes
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/multus-daemonset.yml
