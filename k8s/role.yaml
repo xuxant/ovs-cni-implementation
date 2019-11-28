@@ -5,5 +5,8 @@ metadata:
   name: cluster
 spec:
   imagePullPolicy: IfNotPresent
+  kubeMacPool: {}
+  linuxBridge: {}
   multus: {}
+  nmstate: {}
   ovs: {}
