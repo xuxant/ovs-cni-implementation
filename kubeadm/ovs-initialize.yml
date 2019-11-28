@@ -54,13 +54,6 @@
     - name: Create namespace cluster-network-addons
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/namespace.yaml
 
-#
-#    - name: wait for 5 minutes for daemonset to be ready  
-#      wait_for: 
-#        timeout: 300
-#      delegate_to: localhost
-#    
-#    
 
     - name: Feed network-addons-config.crd.yaml to kubernetes
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/network-addons-config.crd.yaml
