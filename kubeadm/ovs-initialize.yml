@@ -61,19 +61,22 @@
     - name: Feed plugins to kubernetes
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/operator.yaml 
 
+    - name: Wait for 5 minutes
+      wait_for:
+        timeout: 120
+
     - name: Feed ovs addons plugins to kubernetes
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/role.yaml
+
+    - name: Wait for 5 minutes
+      wait_for:
+        timeout: 600
 
     - name: Feed plugins to the kubernetes
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/ovs.yaml
     
     - name: Feed multus interface to kubernetes
-      command: kubectl apply -f /root/k8s/interface.yaml
-
-
-    - name: Wait for 5 minutes
-      wait_for:
-        timeout: 600
+      command: kubectl apply -f /root/ovs-cni-implementation/k8s/interface.yaml
 
     - name: Feed multus daemonset to the kubernetes
       command: kubectl apply -f /root/ovs-cni-implementation/k8s/multus-daemonset.yml

@@ -1,9 +1,33 @@
 ---
-- hosts: all
+- hosts: master
   become: yes
   tasks:
+    - name: Delete all pods from default namespace
+      command: kubectl delete --all pods --namespace=default
+
+    - name: Delete all the deployment from the default namespaces
+      command: kubectl delete --all deployments --namespace=default
+
+    - name: Delete all services from the default namespaces
+      command: kubectl delete --all services --namespace=default
+
+    - name: Delete the flannel CNI from kubernetes
+      command: kubectl delete -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+    - name: Wait for cni to be removed
+      wait_for:
+        timeout: 300
+
+
+- hosts: worker
+  become: yes
+  tasks:
+
     - name: Run kubectl reset command
       shell: yes y | kubeadm reset --ignore-preflight-errors stringSlice
+
+    - name: delete all the containers pulled
+      shell: yes y | docker system purune -a
 
     - name: Stopping docker daemon
       service:
@@ -64,3 +88,79 @@
       file:
         path: $HOME/node_joined.txt
         state: absent
+
+    - name: Delete plugins created by Kubernetes
+      command: rm -rf /opt/cni
+
+- hosts: master
+  become: yes
+  tasks:
+
+    - name: Run kubectl reset command
+      shell: yes y | kubeadm reset --ignore-preflight-errors stringSlice
+
+    - name: delete all the containers pulled
+      shell: yes y | docker system purune -a
+
+    - name: Stopping docker daemon
+      service:
+        name: docker
+        state: stopped
+        enabled: no
+      
+    - name: Stop Kubelet daemon
+      service:
+        name: kubelet
+        state: stopped
+        enabled: no
+
+    - name: Removing Kubernetes
+      yum:
+        name:
+          - kubernetes-cni
+          - kubeadm
+          - kubelet
+          - kubectl
+          - docker
+        state: absent
+
+    - name: Remove daemon files for docker
+      file:
+        path: /etc/docker/daemon.json
+        state: absent
+    
+    - name: remove file for 99-kubernetes-cri.conf
+      file:
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        state: absent
+
+    - name: Reload daemon service
+      command: systemctl daemon-reload
+
+    - name: Remove node_joined.txt
+      file:
+        path: $HOME/node_joined.txt
+        state: absent
+
+    - name: Remove files for .kube
+      file:
+        path: $HOME/.kube
+        state: absent
+
+    - name: Remove cluster_initialized.txt
+      file:
+        path: $HOME/cluster_initialized.txt
+        state: absent
+    
+    - name: Remove pod_network_setup.txt
+      file:
+        path: $HOME/pod_network_setup.txt
+        state: absent
+    
+    - name: Remove node_joined.txt
+      file:
+        path: $HOME/node_joined.txt
+        state: absent
+
+    - name: Delete plugins created by Kubernetes
+      command: rm -rf /opt/cni
