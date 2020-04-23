@@ -1,8 +1,7 @@
 - hosts: all
   become: yes
   tasks:
-    - name: Configure firewall to allow imap/imaps and submission services
-      firewalld:
+    - firewalld:
         port: '{{ item }}'
         permanent: yes
         immediate: yes
