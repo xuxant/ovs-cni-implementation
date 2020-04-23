@@ -2,16 +2,29 @@
   become: yes
   tasks:
     - firewalld:
-        port: '{{ item }}'
+        port: 6443/tcp
         permanent: yes
-        immediate: yes
         state: enabled
-      loop:
-        - 6443/tcp
-        - 2379-2380/tcp
-        - 10250-10253/tcp
-        - 10255/tcp
-        - 8472/udp
+
+    - firewalld:
+        port: 2379-2380/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10250-10253/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10255/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 8472/udp
+        permanent: yes
+        state: enabled
 
     - name: Reload firewalld Service
       service:
