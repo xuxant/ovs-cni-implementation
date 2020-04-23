@@ -8,15 +8,11 @@
 
     - name: set join command
       set_fact:
-        join_command: "{{ join_command_raw.stdout_lines[0] }}"
-
+        join_command: '{{ join_command_raw.stdout_lines[0] }}'
 
 - hosts: worker
   become: yes
   tasks:
-    - hostname:
-        name: worker
-        
     - name: join cluster
       shell: "{{ hostvars['master'].join_command }} --ignore-preflight-errors all >> node_joined.txt"
       args:

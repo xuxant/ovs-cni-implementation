@@ -2,10 +2,19 @@
   become: yes
   tasks:
     - name: Reload firewalld modules
-      service: 
+      service:
         name: firewalld
-        enabled: yes
+        enabled: no
         state: stopped
+
+    - name: Update centos to the latest
+      package:
+        name: '*'
+        state: latest
+
+    - name: Set the hostname for the each nodes
+      hostname:
+        name: '{{inventory_hostname}}'
 
     - name: Yum Repository for docker
       yum_repository:
@@ -14,31 +23,15 @@
         baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
         gpgkey: https://download.docker.com/linux/centos/gpg
         gpgcheck: yes
-    
-    - name: Yum repository for RDO package
+
+    - name: Install epel-release
       yum:
-        name: centos-release-openstack-train
+        name: epel-release
         state: present
-        update_cache: true
-    
-    - name: Install openvswitch
-      yum:
-        name: 
-          - openvswitch
-          - libibverbs
-          - git
-          - epel-release
-        state: present
-    
-    - name: Start and enable openvswitch
-      service:
-        name: openvswitch
-        state: started
-        enabled: yes
 
     - name: install Docker
       yum:
-        name: 
+        name:
           - docker-ce-18.06.2.ce
         state: present
         update_cache: true
@@ -49,8 +42,8 @@
         state: started
         enabled: yes
 
-#    - name: disable SELinux
-#      command: setenforce 0
+    #    - name: disable SELinux
+    #      command: setenforce 0
 
     - name: set SELinux to Permissive
       selinux:
@@ -68,7 +61,7 @@
         name: net.bridge.bridge-nf-call-iptables
         value: 1
         state: present
-    
+
     - name: Add kubernetes Yum repository
       yum_repository:
         name: Kubernetes
@@ -85,7 +78,7 @@
 
     - name: daemon reload for docker
       command: systemctl daemon-reload
-    
+
     - name: install yum-utils
       yum:
         name: yum-utils
@@ -96,20 +89,20 @@
       yum:
         name: kubeadm
         state: present
-  
+
     - name: start kubelet
       service:
         name: kubelet
         enabled: yes
         state: started
-    
+
     - name: create .kube directory
       become: yes
-      file: 
+      file:
         path: /etc/docker
         state: directory
         mode: 0755
-        
+
     - name: Dameonize docker to run as same cggroup as kubernetes
       copy:
         src: ./daemon.json
@@ -120,21 +113,21 @@
 
     - name: Create directory for docker daemon
       command: mkdir -p /etc/systemd/system/docker.service.d
-    
+
     - name: daemon reload for docker
       command: systemctl daemon-reload
-    
+
     - name: restart docker daemon
       service:
         name: docker
         state: restarted
-    
+
     - name: enable kernel module for overlay storage driver
       command: modprobe overlay
-    
+
     - name: enable kernel module for br_netfilter
       command: modprobe br_netfilter
-    
+
     - name: copy 99-kubernetes-cri.conf
       copy:
         src: ./99-kubernetes-cri.conf
@@ -150,19 +143,19 @@
         owner: root
         group: root
         mode: 755
-    
+
     - name: Install packages
-      yum: 
-        name: 
+      yum:
+        name:
           - device-mapper-persistent-data
           - lvm2
         state: present
 
     - name: Add repo for containerd.io
       command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    
+
     - name: Install containerd.io
-      yum: 
+      yum:
         name: containerd.io
         state: present
 
@@ -173,33 +166,3 @@
       yum:
         name: kubectl
         state: present
-
-    - name: Get the interface name of the network adapter
-      shell: ip -o link | awk '$1 {print $2}' | sed -n 3p | cut -d ":" -f1
-      register: join_command_interface_raw
-
-    - name: Set Interface Name
-      set_fact:
-        join_command: "{{ join_command_interface_raw.stdout_lines[0] }}"
-    
-    - name: flush IP of the interface ens37
-      command: ip address flush {{ hostvars['master'].join_command }}
-
-- hosts: worker
-  become: yes
-  tasks:
-    - name: Install kubectl
-      yum:
-        name: kubectl
-        state: present
-
-    - name: Get the interface name of the network adapter
-      shell: ip -o link | awk '$1 {print $2}' | sed -n 3p | cut -d ":" -f1
-      register: join_command_interface_raw_1
-
-    - name: Set Interface Name
-      set_fact:
-        join_command: "{{ join_command_interface_raw_1.stdout_lines[0] }}"
-    
-    - name: flush IP of the interface ens37
-      command: ip address flush {{ hostvars['worker1'].join_command }}
