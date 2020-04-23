@@ -19,6 +19,11 @@
         name: firewalld
         state: restarted
 
+    - name: Update packages to latest
+      package:
+        name: '*'
+        state: latest
+
     - name: Update centos to the latest
       package:
         name: '*'
